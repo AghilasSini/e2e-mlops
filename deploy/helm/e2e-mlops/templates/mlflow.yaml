@@ -1,0 +1,134 @@
+{{- if .Values.tracking.enabled }}
+{{- $name := printf "%s-mlflow" (include "e2e-mlops.fullname" .) }}
+{{- $port := .Values.tracking.port }}
+{{- $pg := include "e2e-mlops.postgresHost" . }}
+{{- $hosts := list $name (printf "%s.%s" $name .Release.Namespace) (printf "%s.%s.svc" $name .Release.Namespace) (printf "%s.%s.svc.cluster.local" $name .Release.Namespace) "localhost" "127.0.0.1" }}
+{{- $allowed := list }}
+{{- range $hosts }}{{ $allowed = append $allowed . }}{{ $allowed = append $allowed (printf "%s:%v" . $port) }}{{ end }}
+{{- with .Values.tracking.ingress.host }}{{ $allowed = append $allowed . }}{{ end }}
+{{- range .Values.tracking.extraAllowedHosts }}{{ $allowed = append $allowed . }}{{ end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "e2e-mlops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tracking
+spec:
+  type: {{ .Values.tracking.service.type }}
+  selector:
+    {{- include "e2e-mlops.selector" (list . "tracking") | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ $port }}
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "e2e-mlops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tracking
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      {{- include "e2e-mlops.selector" (list . "tracking") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "e2e-mlops.labels" . | nindent 8 }}
+        app.kubernetes.io/component: tracking
+    spec:
+      {{- include "e2e-mlops.podCommon" . | nindent 6 }}
+      containers:
+        - name: mlflow
+          image: {{ include "e2e-mlops.image" (list . "mlflow-server") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $port }}
+          env:
+            # Kubernetes expands $(VAR) from earlier entries: the database passwords
+            # never appear in the manifest (they must be URL-safe).
+            {{- include "e2e-mlops.secretEnv" (list "PG_USER" .Values.secrets.postgres "username") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "PG_PASSWORD" .Values.secrets.postgres "password") | nindent 12 }}
+            - name: MLFLOW_BACKEND_STORE_URI
+              value: "postgresql+psycopg2://$(PG_USER):$(PG_PASSWORD)@{{ $pg }}:{{ .Values.postgres.port }}/{{ .Values.postgres.database }}"
+            - name: MLFLOW_AUTH_DATABASE_URI
+              value: "postgresql+psycopg2://$(PG_USER):$(PG_PASSWORD)@{{ $pg }}:{{ .Values.postgres.port }}/{{ .Values.postgres.authDatabase }}"
+            - name: MLFLOW_ARTIFACTS_DESTINATION
+              value: "s3://{{ .Values.objectStore.bucket }}"
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: {{ include "e2e-mlops.s3Endpoint" . | quote }}
+            - name: AWS_DEFAULT_REGION
+              value: {{ .Values.objectStore.region | quote }}
+            {{- include "e2e-mlops.secretEnv" (list "AWS_ACCESS_KEY_ID" .Values.secrets.objectStore "access-key") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "AWS_SECRET_ACCESS_KEY" .Values.secrets.objectStore "secret-key") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "MLFLOW_AUTH_ADMIN_USERNAME" .Values.secrets.mlflowAdmin "username") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "MLFLOW_AUTH_ADMIN_PASSWORD" .Values.secrets.mlflowAdmin "password") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "MLFLOW_FLASK_SERVER_SECRET_KEY" .Values.secrets.mlflowAdmin "flask-secret-key") | nindent 12 }}
+            - name: MLFLOW_SERVER_ALLOWED_HOSTS
+              value: {{ join "," $allowed | quote }}
+            - name: MLFLOW_PORT
+              value: {{ $port | quote }}
+            - name: MLFLOW_WORKERS
+              value: {{ .Values.tracking.workers | quote }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.tracking.resources | nindent 12 }}
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 20
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: {{ .Values.tracking.tmpSize }}
+{{- if .Values.tracking.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "e2e-mlops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tracking
+  {{- with .Values.tracking.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.tracking.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  # Basic-auth credentials travel in every request: TLS is mandatory here.
+  tls:
+    - hosts: [{{ required "tracking.ingress.host is required" .Values.tracking.ingress.host | quote }}]
+      secretName: {{ required "tracking.ingress.tlsSecretName is required" .Values.tracking.ingress.tlsSecretName }}
+  rules:
+    - host: {{ .Values.tracking.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $name }}
+                port:
+                  name: http
+{{- end }}
+{{- end }}

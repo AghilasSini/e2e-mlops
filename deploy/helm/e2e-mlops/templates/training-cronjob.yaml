@@ -1,0 +1,63 @@
+{{- if .Values.training.enabled }}
+{{- if not .Values.tracking.enabled }}
+{{- fail "training.enabled requires tracking.enabled (models are published through MLflow)" }}
+{{- end }}
+# Job template for training runs. Suspended by default: scripts/run-training.sh
+# starts a run with `kubectl create job --from=cronjob/<name>`, which keeps code
+# deployments (helm) and training runs (runtime) decoupled. The image command
+# `train-and-promote` trains, registers a model version and decides promotion.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "e2e-mlops.fullname" . }}-training
+  labels:
+    {{- include "e2e-mlops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: training
+spec:
+  schedule: {{ .Values.training.schedule | quote }}
+  suspend: {{ .Values.training.suspend }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "e2e-mlops.labels" . | nindent 8 }}
+        app.kubernetes.io/component: training
+    spec:
+      backoffLimit: {{ .Values.training.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.training.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ .Values.training.ttlSecondsAfterFinished }}
+      template:
+        metadata:
+          labels:
+            {{- include "e2e-mlops.labels" . | nindent 12 }}
+            app.kubernetes.io/component: training
+        spec:
+          restartPolicy: Never
+          {{- include "e2e-mlops.podCommon" . | nindent 10 }}
+          containers:
+            - name: trainer
+              image: {{ include "e2e-mlops.image" (list . "trainer") }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              env:
+                - name: OUTPUT_DIR
+                  value: /outputs
+                {{- include "e2e-mlops.mlflowClientEnv" (list . "mlflowTrainer") | nindent 16 }}
+              securityContext:
+                {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              resources:
+                {{- toYaml .Values.training.resources | nindent 16 }}
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: outputs
+                  mountPath: /outputs
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: {{ .Values.training.tmpSize }}
+            - name: outputs
+              emptyDir:
+                sizeLimit: {{ .Values.training.outputSize }}
+{{- end }}
