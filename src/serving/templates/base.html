@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Wine quality{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', path='favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+  <main class="card">
+    <header>
+      <a href="/" class="brand">Wine quality</a>
+      <a href="/docs" class="docs">API docs</a>
+    </header>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

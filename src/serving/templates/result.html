@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Prediction · Wine quality{% endblock %}
+{% block content %}
+<h1>Prediction</h1>
+<p class="verdict {{ result.label }}">{{ 'good' if result.label == 'good' else 'not good' }}</p>
+<p>Probability of a good wine: <strong>{{ '%.1f' | format(result.probability * 100) }} %</strong></p>
+<p class="meta">Model version {{ result.model_version }}</p>
+<a class="button" href="/">Try another wine</a>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Is this red wine good?</h1>
+<p class="lead">Enter the 11 physicochemical measurements. A wine counts as <em>good</em> when its quality score would be 6 or more.</p>
+<form method="post" action="/" novalidate>
+  <div class="grid">
+    {% for name in features %}
+    <label class="{{ 'invalid' if name in errors }}">
+      <span>{{ name.replace('_', ' ') }}</span>
+      <input name="{{ name }}" inputmode="decimal" value="{{ values.get(name, '') }}" required>
+      {% if name in errors %}<small>{{ errors[name] }}</small>{% endif %}
+    </label>
+    {% endfor %}
+  </div>
+  {% for name, message in errors.items() if name not in features %}
+  <p class="error">{{ name }}: {{ message }}</p>
+  {% endfor %}
+  <button type="submit">Predict</button>
+</form>
+{% endblock %}

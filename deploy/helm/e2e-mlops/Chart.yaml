@@ -1,0 +1,10 @@
+apiVersion: v2
+name: e2e-mlops
+description: Wine-quality classifier (inference service, training job and model storage) on Kubernetes.
+type: application
+version: 0.1.0
+appVersion: "0.2.0"
+home: https://git.univ-lemans.fr/Aghilas.Sini/e2e-mlops
+maintainers:
+  - name: Aghilas Sini
+    email: aghilas.sini@univ-lemans.fr

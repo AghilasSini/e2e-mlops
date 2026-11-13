@@ -1,0 +1,8 @@
+[flake8]
+max-line-length = 100
+# E203/E701/E704: conflict with black's formatting; W503 is the old line-break rule.
+extend-ignore = E203, E701, E704, W503
+exclude = .git, .venv, .cache, .tools, .gitlab-ci-local, __pycache__, build, dist, research, openspec, docs
+per-file-ignores =
+    # test modules use fixtures as arguments that flake8 cannot see as used
+    tests/*: F811
