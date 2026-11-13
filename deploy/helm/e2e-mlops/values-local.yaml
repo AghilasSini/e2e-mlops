@@ -1,0 +1,68 @@
+# Local profile: a single-node k3s or Minikube cluster on a modest personal machine
+# (4 CPU cores, 8 GB RAM). Budget enforced by tests/deploy/test_chart.py:
+#   CPU requests <= 1, memory requests <= 2 GiB, memory limits <= 3 GiB,
+#   volumes <= 5 GiB, one replica per workload; in kserve mode it includes the logger
+#   sidecar KServe injects (sized in deploy/kserve/values-kserve-local.yaml).
+#   The serving add-ons (KServe, cert-manager: <= 512 MiB requests) are budgeted
+#   separately (tests/deploy/test_kserve_values.py).
+# Images are built and loaded by scripts/local-up.sh (no registry needed);
+# Secrets are created once by scripts/local-secrets.sh.
+
+image:
+  repository: localhost/e2e-mlops
+  tag: local
+  pullPolicy: IfNotPresent
+
+tracking:
+  workers: 1
+  resources:
+    requests: {cpu: 100m, memory: 384Mi}
+    limits: {cpu: 500m, memory: 640Mi}
+
+postgres:
+  storage:
+    size: 1Gi
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 256Mi}
+
+objectStore:
+  mode: internal
+  internal:
+    storage:
+      size: 2Gi
+    resources:
+      requests: {cpu: 100m, memory: 128Mi}
+      limits: {cpu: 500m, memory: 256Mi}
+
+inference:
+  # KServe InferenceService (scripts/kserve-up.sh local installs KServe once).
+  # Access: kubectl -n e2e-mlops port-forward svc/wine-quality-predictor 8080:80
+  # (through the logger sidecar). Fallback without KServe: --set inference.mode=deployment
+  mode: kserve
+  kserve:
+    deploymentMode: Standard   # RawDeployment: no Knative, so no scale-to-zero locally
+    autoscaling:
+      minReplicas: 1
+      maxReplicas: 1
+      metric: cpu
+      target: 80
+  replicas: 1
+  service:                     # deployment mode only
+    type: NodePort
+    port: 80
+    nodePort: 30080
+  resources:
+    requests: {cpu: 100m, memory: 192Mi}
+    limits: {cpu: 500m, memory: 384Mi}
+
+featureLog:
+  enabled: true
+  resources:
+    requests: {cpu: 50m, memory: 96Mi}
+    limits: {cpu: 200m, memory: 192Mi}
+
+training:
+  resources:
+    requests: {cpu: 250m, memory: 384Mi}
+    limits: {cpu: "1", memory: 768Mi}

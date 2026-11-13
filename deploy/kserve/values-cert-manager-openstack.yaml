@@ -1,0 +1,23 @@
+# cert-manager for the OpenStack profile. Installed by scripts/kserve-up.sh openstack.
+# Skip this install if the cluster already runs cert-manager (CERT_MANAGER=skip).
+crds:
+  enabled: true
+  keep: true
+replicaCount: 1
+resources:
+  requests: {cpu: 50m, memory: 96Mi}
+  limits: {cpu: 500m, memory: 256Mi}
+webhook:
+  replicaCount: 1
+  resources:
+    requests: {cpu: 20m, memory: 48Mi}
+    limits: {cpu: 200m, memory: 128Mi}
+cainjector:
+  replicaCount: 1
+  resources:
+    requests: {cpu: 20m, memory: 96Mi}
+    limits: {cpu: 200m, memory: 256Mi}
+startupapicheck:
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 100m, memory: 64Mi}

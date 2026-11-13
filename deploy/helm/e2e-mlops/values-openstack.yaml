@@ -1,0 +1,70 @@
+# Production profile: OpenStack-managed Kubernetes (e.g. Magnum).
+# scripts/deploy.sh sets image.repository ($CI_REGISTRY_IMAGE) and image.tag (commit SHA)
+# and creates the Secrets listed under `secrets:` from CI/CD variables.
+
+image:
+  pullPolicy: IfNotPresent   # tags are immutable commit SHAs
+
+imagePullSecrets:
+  - name: gitlab-registry
+
+tracking:
+  workers: 2
+  ingress:
+    enabled: false           # set true + host to expose the UI (basic-auth + TLS)
+    className: nginx
+    host: ""
+    tlsSecretName: mlflow-tls
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "1", memory: 1Gi}
+
+postgres:
+  storage:
+    size: 10Gi
+    storageClass: ""         # cluster default (Cinder CSI)
+  parameters: ["-c", "shared_buffers=128MB", "-c", "max_connections=50"]
+  resources:
+    requests: {cpu: 250m, memory: 256Mi}
+    limits: {cpu: "1", memory: 1Gi}
+
+objectStore:
+  mode: external
+  createBucket: false        # create the bucket in the cloud's object store
+  external:
+    endpoint: https://object-store.example.org   # replace: Swift s3api or Ceph RGW endpoint
+
+inference:
+  # KServe in Knative (serverless) mode: scales to zero when idle. Prerequisite on the
+  # cluster: Knative Serving + Kourier, then scripts/kserve-up.sh openstack. The URL
+  # comes from Knative's domain configuration; the Ingress below is for deployment mode.
+  mode: kserve
+  kserve:
+    deploymentMode: Knative
+    autoscaling:
+      minReplicas: 0
+      maxReplicas: 3
+      metric: concurrency
+      target: 5
+  replicas: 2                # deployment mode only
+  service:
+    type: ClusterIP
+  ingress:                   # deployment mode only
+    enabled: true
+    className: nginx
+    host: wine.example.org   # replace at deploy time: --set inference.ingress.host=...
+    tlsSecretName: wine-tls
+  resources:
+    requests: {cpu: 250m, memory: 256Mi}
+    limits: {cpu: "1", memory: 512Mi}
+
+featureLog:
+  enabled: true
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 256Mi}
+
+training:
+  resources:
+    requests: {cpu: 500m, memory: 512Mi}
+    limits: {cpu: "2", memory: 1Gi}

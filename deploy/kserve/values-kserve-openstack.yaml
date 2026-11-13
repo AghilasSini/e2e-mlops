@@ -1,0 +1,45 @@
+# KServe (kserve-resources chart) for the OpenStack profile. Installed by
+# scripts/kserve-up.sh openstack.
+#
+# Knative deployment mode (called Serverless before KServe 0.15): scale-to-zero.
+# Prerequisite, installed by the cluster owner: Knative Serving with the Kourier
+# networking layer (kserve-up.sh checks for it and stops otherwise).
+kserve:
+  controller:
+    deploymentMode: Knative
+    image: docker.io/kserve/kserve-controller
+    tag: v0.21.0
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests: {cpu: 100m, memory: 192Mi}
+      limits: {cpu: 500m, memory: 384Mi}
+    rbacProxyImage: quay.io/brancz/kube-rbac-proxy:v0.18.0
+    rbacProxy:
+      resources:
+        requests: {cpu: 10m, memory: 32Mi}
+        limits: {cpu: 100m, memory: 64Mi}
+    gateway:
+      # Kourier instead of Istio: no Istio VirtualService; cluster-local traffic goes
+      # through Kourier's internal Service.
+      disableIstioVirtualHost: true
+      localGateway:
+        gateway: knative-serving/knative-local-gateway
+        gatewayService: kourier-internal.kourier-system.svc.cluster.local
+  agent:
+    image: docker.io/kserve/agent
+    tag: v0.21.0
+  inferenceservice:
+    resources:
+      requests: {cpu: 250m, memory: 256Mi}
+      limits: {cpu: "1", memory: 512Mi}
+  storage:
+    resources:
+      requests: {cpu: 50m, memory: 64Mi}
+      limits: {cpu: 500m, memory: 512Mi}
+
+# Not a KServe chart value: see values-kserve-local.yaml.
+loggerSidecar:
+  cpuRequest: 25m
+  memoryRequest: 64Mi
+  cpuLimit: 100m
+  memoryLimit: 128Mi

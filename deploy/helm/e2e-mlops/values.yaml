@@ -1,0 +1,200 @@
+# Default values. Environment files override them:
+#   values-local.yaml      k3s or Minikube on a modest machine (budgeted resources)
+#   values-openstack.yaml  OpenStack-managed Kubernetes
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  # Images are <repository>/<component>:<tag>, e.g. localhost/e2e-mlops/inference:local.
+  # CI sets repository to $CI_REGISTRY_IMAGE and tag to the commit SHA.
+  repository: localhost/e2e-mlops
+  tag: local
+  pullPolicy: IfNotPresent
+
+# e.g. [{name: gitlab-registry}], created by scripts/deploy.sh from CI variables.
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+# Kubernetes Secrets, referenced by name only. Created by scripts/local-secrets.sh
+# (local) or scripts/deploy.sh from CI variables (OpenStack); never stored in values.
+secrets:
+  postgres: e2e-mlops-postgres            # username, password (URL-safe)
+  objectStore: e2e-mlops-s3               # access-key, secret-key
+                                          #   + s3.json, filer-signing-key (in-chart SeaweedFS)
+  mlflowAdmin: e2e-mlops-mlflow-admin     # username, password (>= 12 chars), flask-secret-key
+  mlflowTrainer: e2e-mlops-mlflow-trainer # username, password
+  mlflowServing: e2e-mlops-mlflow-serving # username, password
+  featureLog: e2e-mlops-feature-log       # username, password (feature-log database user)
+
+# ------------------------------------------------------------------ tracking (MLflow)
+tracking:
+  enabled: true
+  experimentName: wine-quality
+  modelName: wine-quality
+  port: 5000
+  workers: 1
+  # Extra Host headers MLflow accepts (the Service names are always allowed).
+  extraAllowedHosts: []
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: false
+    className: ""
+    host: ""
+    annotations: {}
+    tlsSecretName: ""
+  resources:
+    requests: {cpu: 100m, memory: 384Mi}
+    limits: {cpu: 500m, memory: 640Mi}
+  tmpSize: 128Mi
+  bootstrap:
+    resources:
+      requests: {cpu: 50m, memory: 64Mi}
+      limits: {cpu: 200m, memory: 256Mi}
+
+postgres:
+  enabled: true
+  image: docker.io/library/postgres:16.14-bookworm
+  database: mlflow
+  authDatabase: mlflow_auth
+  # Used when enabled=false (external PostgreSQL); the databases must exist.
+  externalHost: ""
+  port: 5432
+  storage:
+    size: 1Gi
+    storageClass: ""
+  parameters: ["-c", "shared_buffers=32MB", "-c", "max_connections=30"]
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 256Mi}
+
+objectStore:
+  # internal: SeaweedFS in the chart (local). external: an existing S3 endpoint
+  # (OpenStack Swift s3api or Ceph RGW); no object-store workload is rendered.
+  mode: internal
+  bucket: mlflow-artifacts
+  region: us-east-1
+  # Create the bucket from a hook Job if missing (disable when the cloud provider
+  # creates it and the keys may not create buckets).
+  createBucket: true
+  external:
+    endpoint: ""            # e.g. https://object-store.example.org
+  internal:
+    image: docker.io/chrislusf/seaweedfs:4.50
+    s3Port: 8333
+    storage:
+      size: 2Gi
+      storageClass: ""
+    volumeSizeLimitMB: 64
+    resources:
+      requests: {cpu: 100m, memory: 128Mi}
+      limits: {cpu: 500m, memory: 256Mi}
+  initJob:
+    resources:
+      requests: {cpu: 50m, memory: 64Mi}
+      limits: {cpu: 200m, memory: 128Mi}
+
+# ------------------------------------------------------------------ inference
+inference:
+  enabled: true
+  # How inference runs (same image, configuration and Secrets either way):
+  #   deployment  a plain Deployment + Service (+ optional Ingress); needs nothing else
+  #   kserve      a KServe InferenceService named after tracking.modelName; needs KServe
+  #               (scripts/kserve-up.sh), checked by scripts/deploy.sh before Helm runs
+  mode: deployment
+  # Exact registry version to serve (models:/<modelName>/<championVersion>). Set by the
+  # champion rollout (scripts/serve-champion.sh) and kept by scripts/deploy.sh; empty on
+  # a fresh install, which serves `modelUri` (the champion alias) instead.
+  championVersion: null
+  replicas: 1                # deployment mode; kserve mode uses kserve.autoscaling
+  port: 8080
+  # Registry alias served when no championVersion is pinned.
+  modelUri: models:/wine-quality@champion
+  kserve:
+    # serving.kserve.io/deploymentMode: Standard (called RawDeployment before KServe
+    # 0.15: Deployment + Service, no Knative) or Knative (called Serverless: scale to
+    # zero; needs Knative Serving + Kourier on the cluster).
+    deploymentMode: Standard
+    autoscaling:
+      minReplicas: 1
+      maxReplicas: 1
+      metric: cpu            # Standard: cpu | memory (HPA); Knative: concurrency | rps
+      target: 80             # % utilisation (cpu/memory) or requests per pod
+  service:
+    type: ClusterIP
+    port: 80
+    nodePort: null
+  ingress:
+    enabled: false
+    className: ""
+    host: ""
+    annotations: {}
+    tlsSecretName: ""
+  resources:
+    requests: {cpu: 100m, memory: 192Mi}
+    limits: {cpu: 500m, memory: 384Mi}
+  livenessProbe:
+    httpGet: {path: /health/live, port: http}
+    initialDelaySeconds: 5
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readinessProbe:
+    httpGet: {path: /health/ready, port: http}
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  tmpSize: 64Mi
+
+# ------------------------------------------------------------------ feature log
+# Receives KServe's request/response CloudEvents (kserve mode only: the logger sidecar
+# exists only in InferenceService pods) and stores them in its own PostgreSQL database,
+# created by the tracking bootstrap hook. Needs tracking.enabled (PostgreSQL).
+featureLog:
+  enabled: true
+  database: feature_log
+  port: 8080
+  resources:
+    requests: {cpu: 50m, memory: 96Mi}
+    limits: {cpu: 200m, memory: 192Mi}
+  # Only the predictor pods may send events (enforced by k3s; not by Minikube's
+  # default CNI).
+  networkPolicy:
+    enabled: true
+  tmpSize: 16Mi
+
+# ------------------------------------------------------------------ training
+training:
+  enabled: true
+  # The chart renders a *suspended* CronJob used as a job template:
+  # scripts/run-training.sh starts a run with `kubectl create job --from=cronjob/...`.
+  # The job trains, registers a version in MLflow, then decides promotion
+  # (image command `train-and-promote`). Set suspend: false to also train on `schedule`.
+  suspend: true
+  schedule: "0 3 * * 0"
+  backoffLimit: 1
+  activeDeadlineSeconds: 900
+  ttlSecondsAfterFinished: 86400
+  resources:
+    requests: {cpu: 250m, memory: 384Mi}
+    limits: {cpu: "1", memory: 768Mi}
+  tmpSize: 64Mi
+  outputSize: 128Mi

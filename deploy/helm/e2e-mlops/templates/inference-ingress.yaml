@@ -1,0 +1,33 @@
+{{- if and .Values.inference.enabled .Values.inference.ingress.enabled (eq (include "e2e-mlops.inferenceMode" .) "deployment") }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "e2e-mlops.fullname" . }}-inference
+  labels:
+    {{- include "e2e-mlops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inference
+  {{- with .Values.inference.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.inference.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.inference.ingress.tlsSecretName }}
+  tls:
+    - hosts: [{{ required "inference.ingress.host is required" .Values.inference.ingress.host | quote }}]
+      secretName: {{ .Values.inference.ingress.tlsSecretName }}
+  {{- end }}
+  rules:
+    - host: {{ required "inference.ingress.host is required" .Values.inference.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "e2e-mlops.fullname" . }}-inference
+                port:
+                  name: http
+{{- end }}

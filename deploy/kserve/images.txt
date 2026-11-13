@@ -1,0 +1,10 @@
+# Images the serving add-ons run, for offline clusters: scripts/local-up.sh pulls
+# them and imports them into k3s/Minikube. Must match versions.env and the values
+# files (checked by tests/deploy/test_kserve_values.py).
+quay.io/jetstack/cert-manager-controller:v1.21.3
+quay.io/jetstack/cert-manager-webhook:v1.21.3
+quay.io/jetstack/cert-manager-cainjector:v1.21.3
+quay.io/jetstack/cert-manager-startupapicheck:v1.21.3
+docker.io/kserve/kserve-controller:v0.21.0
+docker.io/kserve/agent:v0.21.0
+quay.io/brancz/kube-rbac-proxy:v0.18.0

@@ -1,0 +1,233 @@
+# GitLab CI/CD: test -> build -> deploy (open-source tooling only).
+#
+#   test    lint (flake8, black, isort), unit tests + coverage, Helm chart checks
+#   build   trainer, inference, mlflow-server and feature-logger images with Buildah (no
+#           privileged runner), pushed to the project's GitLab Container Registry under the
+#           commit SHA
+#
+# CI never trains a model: training is a runtime job (scripts/run-training.sh).
+#   deploy  local cluster (opt-in, manual) and OpenStack (manual, production)
+#
+# Required CI/CD variables (Settings > CI/CD > Variables), all protected + masked:
+#   CI_DEPLOY_USER / CI_DEPLOY_PASSWORD  deploy token named `gitlab-deploy-token`
+#                                        (read_registry) -> image pull secret
+#   KUBECONFIG_OPENSTACK                 file-type variable, kubeconfig of the
+#                                        production cluster
+#   POSTGRES_PASSWORD, S3_ACCESS_KEY, S3_SECRET_KEY, MLFLOW_ADMIN_PASSWORD,
+#   MLFLOW_FLASK_SECRET_KEY, MLFLOW_TRAINER_PASSWORD, MLFLOW_SERVING_PASSWORD,
+#   FEATURE_LOG_PASSWORD                 platform Secrets for deploy-openstack
+#                                        (URL-safe; MLflow passwords >= 12 chars)
+# Cluster prerequisites for deploy-openstack (inference.mode=kserve): Knative Serving +
+# Kourier, then scripts/kserve-up.sh openstack (owner, once per cluster).
+# Optional:
+#   LOCAL_DEPLOY_ENABLED=true            create the `deploy-local` job (needs a runner
+#                                        tagged `local-cluster` next to k3s/Minikube)
+#   PRODUCTION_HOST                      ingress host of the production service
+
+stages: [test, build, deploy]
+
+variables:
+  PYTHON_IMAGE: python:3.11.15-slim-bookworm
+  UV_VERSION: "0.10.9"
+  UV_CACHE_DIR: $CI_PROJECT_DIR/.cache/uv
+  UV_PROJECT_ENVIRONMENT: $CI_PROJECT_DIR/.venv
+  UV_PYTHON_DOWNLOADS: never
+  UV_HTTP_TIMEOUT: "120"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  TOOLS: $CI_PROJECT_DIR/.tools
+  HELM_URL: https://get.helm.sh/helm-v3.22.1-linux-amd64.tar.gz
+  HELM_SHA256: 896cf63684a42a723d61c980369d6e588330927deb13676ca0d85006dd6da0ea
+  KUBECONFORM_URL: https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz
+  KUBECONFORM_SHA256: c31518ddd122663b3f3aa874cfe8178cb0988de944f29c74a0b9260920d115d3
+  KUBECTL_URL: https://dl.k8s.io/release/v1.33.13/bin/linux/amd64/kubectl
+  KUBECTL_SHA256: 316d712726d857c20744c57cb36aa47cfc79bc0af7e82cebf3780244b654c073
+  BUILDAH_IMAGE: quay.io/buildah/stable:v1.43.4
+
+# Run for merge requests and branches, but only when code (not just docs) changed.
+.code-changes: &code-changes
+  - src/**/*
+  - tests/**/*
+  - deploy/**/*
+  - scripts/**/*
+  - config/**/*
+  - data/**/*
+  - Dockerfile
+  - .dockerignore
+  - pyproject.toml
+  - uv.lock
+  - params.yaml
+  - schema.yaml
+  - .flake8
+  - .gitlab-ci.yml
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes: *code-changes
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+      changes: *code-changes
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+# ------------------------------------------------------------------ templates
+.python:
+  image: $PYTHON_IMAGE
+  cache:
+    key:
+      files: [uv.lock]
+    paths: [.cache/uv]
+  before_script:
+    - pip install --quiet "uv==${UV_VERSION}"
+    # dev = train + serve + test/lint tools + full mlflow (no server drivers needed)
+    - uv sync --frozen --extra dev
+
+.k8s-tools: &k8s-tools
+  - python scripts/fetch_tool.py "$HELM_URL" "$HELM_SHA256" "$TOOLS/helm" --member linux-amd64/helm
+  - python scripts/fetch_tool.py "$KUBECTL_URL" "$KUBECTL_SHA256" "$TOOLS/kubectl"
+  - export PATH="$TOOLS:$PATH"
+
+# ------------------------------------------------------------------ test
+lint:
+  stage: test
+  extends: .python
+  script:
+    - uv run flake8 src tests scripts
+    - uv run black --check --diff src tests scripts
+    - uv run isort --check-only --diff src tests scripts
+
+unit-tests:
+  stage: test
+  extends: .python
+  script:
+    - >
+      uv run pytest --cov=src --cov-report=term --cov-report=xml:coverage.xml
+      --junitxml=junit.xml
+  coverage: '/^TOTAL.*\s+(\d+(?:\.\d+)?%)$/'
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    reports:
+      junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+chart-lint:
+  stage: test
+  extends: .python
+  script:
+    - *k8s-tools
+    - python scripts/fetch_tool.py "$KUBECONFORM_URL" "$KUBECONFORM_SHA256" "$TOOLS/kubeconform" --member kubeconform
+    # JSON schema of KServe's InferenceService, from the kserve-crd chart pinned (URL +
+    # SHA-256) in deploy/kserve/versions.env, so kubeconform validates it strictly too.
+    - uv run python scripts/kserve_crd_schema.py "$TOOLS/schemas"
+    # local = in-chart SeaweedFS (internal object store), openstack = external S3;
+    # each in both inference modes (kserve: InferenceService, deployment: Deployment).
+    - |
+      for profile in local openstack; do
+        for mode in kserve deployment; do
+          echo "== $profile, inference.mode=$mode"
+          helm lint deploy/helm/e2e-mlops -f "deploy/helm/e2e-mlops/values-$profile.yaml" \
+            --set inference.mode=$mode
+          helm template e2e-mlops deploy/helm/e2e-mlops -f "deploy/helm/e2e-mlops/values-$profile.yaml" \
+            --set inference.mode=$mode \
+            | kubeconform -strict -summary -kubernetes-version 1.33.0 -schema-location default \
+                -schema-location "$TOOLS/schemas/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
+        done
+      done
+    - >
+      helm template e2e-mlops deploy/helm/e2e-mlops -f deploy/helm/e2e-mlops/values-local.yaml
+      --set objectStore.mode=external --set objectStore.external.endpoint=https://s3.example.org
+      | kubeconform -strict -summary -kubernetes-version 1.33.0 -schema-location default
+      -schema-location "$TOOLS/schemas/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
+    # Chart tests, add-on values, and the reference manifest check: fails when
+    # deploy/kserve/inferenceservice.yaml differs from what the chart renders.
+    - uv run pytest tests/deploy
+
+# ------------------------------------------------------------------ build
+.build:
+  stage: build
+  image: $BUILDAH_IMAGE
+  variables:
+    STORAGE_DRIVER: vfs
+    BUILDAH_FORMAT: docker
+    BUILDAH_ISOLATION: chroot
+  script:
+    - IMAGE="$CI_REGISTRY_IMAGE/$TARGET"
+    - echo "$CI_REGISTRY_PASSWORD" | buildah login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - >
+      buildah build --layers
+      --cache-from "$CI_REGISTRY_IMAGE/cache" --cache-to "$CI_REGISTRY_IMAGE/cache"
+      --target "$TARGET"
+      --build-arg GIT_SHA="$CI_COMMIT_SHORT_SHA" --build-arg IMAGE_TAG="$CI_COMMIT_SHORT_SHA"
+      --tag "$IMAGE:$CI_COMMIT_SHORT_SHA" .
+    - |
+      if [ "$CI_PIPELINE_SOURCE" = "merge_request_event" ]; then
+        echo "merge request: image built, not pushed"
+        exit 0
+      fi
+      buildah push "$IMAGE:$CI_COMMIT_SHORT_SHA"
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        buildah tag "$IMAGE:$CI_COMMIT_SHORT_SHA" "$IMAGE:latest"
+        buildah push "$IMAGE:latest"
+      fi
+
+build-trainer:
+  extends: .build
+  variables:
+    TARGET: trainer
+
+build-inference:
+  extends: .build
+  variables:
+    TARGET: inference
+
+build-mlflow-server:
+  extends: .build
+  variables:
+    TARGET: mlflow-server
+
+build-feature-logger:
+  extends: .build
+  variables:
+    TARGET: feature-logger
+
+# ------------------------------------------------------------------ deploy
+# Deployments always use the immutable commit-SHA tag, never `latest`.
+.deploy:
+  stage: deploy
+  image: $PYTHON_IMAGE
+  variables:
+    IMAGE_REPOSITORY: $CI_REGISTRY_IMAGE
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+    REGISTRY: $CI_REGISTRY
+  before_script:
+    - *k8s-tools
+
+deploy-local:
+  extends: .deploy
+  tags: [local-cluster]
+  environment:
+    name: local
+  rules:
+    - if: $LOCAL_DEPLOY_ENABLED == "true" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true
+  script:
+    - scripts/deploy.sh local
+
+deploy-openstack:
+  extends: .deploy
+  resource_group: production
+  environment:
+    name: production
+    url: https://$PRODUCTION_HOST
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+  script:
+    - export KUBECONFIG="$KUBECONFIG_OPENSTACK"
+    - >
+      scripts/deploy.sh openstack
+      ${PRODUCTION_HOST:+--set inference.ingress.host=$PRODUCTION_HOST}

@@ -1,0 +1,99 @@
+# Reference InferenceService: the chart rendered with the local values. Generated, do
+# not edit; CI fails when it differs from the chart. Regenerate with
+#   python tests/deploy/test_reference_manifest.py --write
+---
+# Source: e2e-mlops/templates/inferenceservice.yaml
+# Champion served by KServe: a custom predictor running our inference image, which
+# loads the model from the MLflow registry (MODEL_URI) and answers both the JSON API
+# and the Open Inference Protocol v2. The deploymentMode annotation picks Standard
+# (RawDeployment) or Knative (Serverless); see values `inference.kserve`.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: wine-quality
+  labels:
+    helm.sh/chart: e2e-mlops-0.1.0
+    app.kubernetes.io/name: e2e-mlops
+    app.kubernetes.io/instance: e2e-mlops
+    app.kubernetes.io/version: "0.2.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: e2e-mlops
+    app.kubernetes.io/component: inference
+  annotations:
+    serving.kserve.io/deploymentMode: "Standard"
+    serving.kserve.io/autoscalerClass: hpa
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    scaleMetric: cpu
+    scaleTarget: 80
+    logger:
+      mode: all
+      url: http://e2e-mlops-feature-logger.e2e-mlops.svc.cluster.local/
+    serviceAccountName: e2e-mlops
+    automountServiceAccountToken: false
+    containers:
+      - name: kserve-container
+        image: localhost/e2e-mlops/inference:local
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8080
+            protocol: TCP
+        env:
+          - name: MODEL_URI
+            value: "models:/wine-quality@champion"
+          - name: MLFLOW_TRACKING_URI
+            value: "http://e2e-mlops-mlflow:5000"
+          - name: MLFLOW_TRACKING_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: e2e-mlops-mlflow-serving
+                key: username
+          - name: MLFLOW_TRACKING_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: e2e-mlops-mlflow-serving
+                key: password
+          - name: MLFLOW_HTTP_REQUEST_MAX_RETRIES
+            value: "3"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 10001
+          runAsNonRoot: true
+          runAsUser: 10001
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          limits:
+            cpu: 500m
+            memory: 384Mi
+          requests:
+            cpu: 100m
+            memory: 192Mi
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 3
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health/ready
+            port: 8080
+          periodSeconds: 5
+          timeoutSeconds: 3
+        volumeMounts:
+          - name: tmp
+            mountPath: /tmp
+    volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 64Mi

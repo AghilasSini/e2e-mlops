@@ -1,0 +1,27 @@
+{{- if and .Values.inference.enabled (eq (include "e2e-mlops.inferenceMode" .) "kserve") }}
+InferenceService {{ .Values.tracking.modelName }} ({{ .Values.inference.kserve.deploymentMode }} mode), serving {{ include "e2e-mlops.modelUri" . }}
+  Status:       kubectl -n {{ .Release.Namespace }} get inferenceservice {{ .Values.tracking.modelName }}
+  Port-forward: kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Values.tracking.modelName }}-predictor 8080:80
+                then POST /predict or /v2/models/{{ .Values.tracking.modelName }}/infer
+{{- if eq (include "e2e-mlops.featureLogActive" .) "true" }}
+  Every call is logged to database {{ .Values.featureLog.database }} by {{ include "e2e-mlops.fullname" . }}-feature-logger.
+{{- end }}
+{{- else if .Values.inference.enabled }}
+Inference service: {{ include "e2e-mlops.fullname" . }}-inference ({{ .Values.inference.service.type }}), serving {{ include "e2e-mlops.modelUri" . }}
+{{- if eq .Values.inference.service.type "NodePort" }}
+  Local URL:  http://<node-ip>:{{ .Values.inference.service.nodePort }}   (k3s: node IP; Minikube: `minikube ip`)
+{{- end }}
+  Port-forward: kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "e2e-mlops.fullname" . }}-inference 8080:{{ .Values.inference.service.port }}
+{{- end }}
+{{- if .Values.tracking.enabled }}
+
+MLflow UI (basic-auth; admin credentials in Secret {{ .Values.secrets.mlflowAdmin }}):
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "e2e-mlops.fullname" . }}-mlflow 5000:{{ .Values.tracking.port }}
+  then open http://localhost:5000
+{{- end }}
+{{- if .Values.training.enabled }}
+
+Train, register and promote:  scripts/run-training.sh <local|openstack>
+  (creates a Job from cronjob/{{ include "e2e-mlops.fullname" . }}-training, then rolls out the champion
+  with scripts/serve-champion.sh; revert a rollout with `helm rollback {{ .Release.Name }}`)
+{{- end }}

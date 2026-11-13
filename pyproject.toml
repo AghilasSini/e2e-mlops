@@ -1,0 +1,115 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "e2e-mlops"
+version = "0.2.0"
+description = "Wine-quality classifier delivered with a fully open-source, self-hosted MLOps stack."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Aghilas Sini", email = "aghilas.sini@univ-lemans.fr" }]
+requires-python = ">=3.11,<3.12"
+# Shared by every image: configuration only. The model stack is the `core` extra, so
+# small services (the feature logger) do not ship numpy/pandas/scikit-learn.
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# MLflow is pinned to one exact version everywhere: client images use the lean
+# client-only `mlflow-skinny`, the tracking server and the dev/test env use full `mlflow`.
+# Models are serialized with skops (MLflow's default for sklearn; no pickle).
+# Data processing + model: training and inference.
+core = [
+    "numpy>=1.26,<3",
+    "pandas>=2.2,<3",
+    "scikit-learn>=1.5,<1.8",
+    "joblib>=1.4",
+]
+# Training image: MLflow client (+ skops for the model format).
+train = [
+    "e2e-mlops[core]",
+    "mlflow-skinny==3.17.2",
+    "skops>=0.15",
+]
+# Inference image.
+serve = [
+    "e2e-mlops[core]",
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.18",
+    "mlflow-skinny==3.17.2",
+    "skops>=0.15",
+]
+# Tracking server image (mlflow server with basic-auth + PostgreSQL + S3 drivers).
+tracking-server = [
+    "mlflow[auth]==3.17.2",
+    "psycopg2-binary>=2.9.10",
+    "boto3>=1.35",
+]
+# Feature-logger image: CloudEvents receiver writing to PostgreSQL (no model stack).
+feature-log = [
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+    "sqlalchemy>=2.0,<3",
+    "psycopg2-binary>=2.9.10",
+]
+# Developer tooling and tests (never installed in images). Full mlflow provides the
+# SQLite tracking store used by the tests.
+dev = [
+    "e2e-mlops[train,serve,feature-log]",
+    "mlflow[auth]==3.17.2",
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "httpx2>=2.0",
+    "flake8>=7.1",
+    "black>=24.8",
+    "isort>=5.13",
+    "pip-audit>=2.7",
+]
+
+[project.urls]
+Repository = "https://git.univ-lemans.fr/Aghilas.Sini/e2e-mlops"
+Issues = "https://git.univ-lemans.fr/Aghilas.Sini/e2e-mlops/-/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/common", "src/data", "src/training", "src/serving", "src/models", "src/feature_log",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+extend-exclude = "^/(\\.cache|\\.tools|\\.gitlab-ci-local|research|openspec|docs)/"
+
+[tool.isort]
+profile = "black"
+line_length = 100
+src_paths = ["src", "tests"]
+known_first_party = ["common", "data", "training", "serving", "models", "feature_log"]
+extend_skip = [".cache", ".tools", ".gitlab-ci-local", "research", "openspec", "docs"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --import-mode=importlib"
+markers = [
+    "slow: end-to-end tests that train a model",
+    "integration: starts a real local MLflow server (no cluster needed)",
+]
+filterwarnings = [
+    # raised inside MLflow's SQLAlchemy store (third-party), not by this project
+    "ignore:The ``noload`` loader strategy is deprecated",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
+exclude_also = ["if __name__ == .__main__.:", "raise NotImplementedError"]

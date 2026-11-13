@@ -1,0 +1,24 @@
+# cert-manager for the local profile (k3s/Minikube on a modest machine).
+# Installed by scripts/kserve-up.sh local; chart version in versions.env.
+# KServe needs it only for its webhook certificate, so every pod is sized small.
+crds:
+  enabled: true
+  keep: true
+replicaCount: 1
+resources:
+  requests: {cpu: 10m, memory: 48Mi}
+  limits: {cpu: 100m, memory: 128Mi}
+webhook:
+  replicaCount: 1
+  resources:
+    requests: {cpu: 10m, memory: 24Mi}
+    limits: {cpu: 100m, memory: 64Mi}
+cainjector:
+  replicaCount: 1
+  resources:                        # measured 68Mi on an idle kind cluster
+    requests: {cpu: 10m, memory: 80Mi}
+    limits: {cpu: 100m, memory: 192Mi}
+startupapicheck:
+  resources:
+    requests: {cpu: 10m, memory: 24Mi}
+    limits: {cpu: 100m, memory: 64Mi}

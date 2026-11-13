@@ -1,0 +1,18 @@
+# Allow-list: only what the images need reaches the build context.
+# Everything else (.git, research/, docs/, tests/, openspec/, outputs/, secrets) stays out.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!src/
+!config/config.yaml
+!params.yaml
+!schema.yaml
+!data/raw/winequality-red.csv
+!scripts/train-and-promote.sh
+!scripts/mlflow-server.sh
+!scripts/mlflow_bootstrap.py
+!scripts/mlflow_server_exec.py
+**/__pycache__
+**/*.py[cod]

@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tooling caches and reports
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+junit.xml
+.ipynb_checkpoints/
+.gitlab-ci-local/
+.tools/
+.cache/
+
+# Generated pipeline outputs (models live in MLflow from Epic 2 on)
+artifacts/
+outputs/
+logs/
+mlruns/
+mlflow.db
+*.joblib
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+*.pem
+kubeconfig*
+
+# Helm
+deploy/helm/*/charts/
+*.tgz
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local scratch (session temp files)
+tmp/

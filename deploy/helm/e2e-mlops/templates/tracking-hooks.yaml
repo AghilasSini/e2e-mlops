@@ -1,0 +1,124 @@
+{{- if .Values.tracking.enabled }}
+{{- if .Values.objectStore.createBucket }}
+# 1. Create the artifact bucket if missing (weight 0, before the users).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "e2e-mlops.fullname" . }}-bucket-init
+  labels:
+    {{- include "e2e-mlops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bucket-init
+  annotations:
+    {{- include "e2e-mlops.hook" (list "post-install,post-upgrade" 0) | nindent 4 }}
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels:
+        {{- include "e2e-mlops.labels" . | nindent 8 }}
+        app.kubernetes.io/component: bucket-init
+    spec:
+      restartPolicy: OnFailure
+      {{- include "e2e-mlops.podCommon" . | nindent 6 }}
+      containers:
+        - name: bucket-init
+          image: {{ include "e2e-mlops.image" (list . "mlflow-server") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-c"]
+          args:
+            - |
+              import os, time, boto3, botocore
+              s3 = boto3.client("s3", endpoint_url=os.environ["S3_ENDPOINT"], region_name=os.environ["AWS_DEFAULT_REGION"])
+              bucket = os.environ["BUCKET"]
+              for attempt in range(60):
+                  try:
+                      s3.head_bucket(Bucket=bucket); print(f"bucket {bucket}: exists"); break
+                  except botocore.exceptions.ClientError as exc:
+                      if exc.response["Error"]["Code"] in ("404", "NoSuchBucket"):
+                          s3.create_bucket(Bucket=bucket); print(f"bucket {bucket}: created"); break
+                      raise
+                  except botocore.exceptions.EndpointConnectionError:
+                      time.sleep(5)
+              else:
+                  raise SystemExit("object store not reachable")
+          env:
+            - name: S3_ENDPOINT
+              value: {{ include "e2e-mlops.s3Endpoint" . | quote }}
+            - name: BUCKET
+              value: {{ .Values.objectStore.bucket | quote }}
+            - name: AWS_DEFAULT_REGION
+              value: {{ .Values.objectStore.region | quote }}
+            {{- include "e2e-mlops.secretEnv" (list "AWS_ACCESS_KEY_ID" .Values.secrets.objectStore "access-key") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "AWS_SECRET_ACCESS_KEY" .Values.secrets.objectStore "secret-key") | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.objectStore.initJob.resources | nindent 12 }}
+---
+{{- end }}
+# 2. Experiment, registered model, service users and their grants (idempotent); in
+#    kserve mode also the feature log's database and role (PostgreSQL admin credentials).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "e2e-mlops.fullname" . }}-mlflow-bootstrap
+  labels:
+    {{- include "e2e-mlops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tracking-bootstrap
+  annotations:
+    {{- include "e2e-mlops.hook" (list "post-install,post-upgrade" 5) | nindent 4 }}
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        {{- include "e2e-mlops.labels" . | nindent 8 }}
+        app.kubernetes.io/component: tracking-bootstrap
+    spec:
+      restartPolicy: OnFailure
+      {{- include "e2e-mlops.podCommon" . | nindent 6 }}
+      containers:
+        - name: bootstrap
+          image: {{ include "e2e-mlops.image" (list . "mlflow-server") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "/opt/mlflow/mlflow_bootstrap.py"]
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: {{ include "e2e-mlops.trackingUrl" . | quote }}
+            {{- include "e2e-mlops.secretEnv" (list "MLFLOW_TRACKING_USERNAME" .Values.secrets.mlflowAdmin "username") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "MLFLOW_TRACKING_PASSWORD" .Values.secrets.mlflowAdmin "password") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "TRAINER_USERNAME" .Values.secrets.mlflowTrainer "username") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "TRAINER_PASSWORD" .Values.secrets.mlflowTrainer "password") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "SERVING_USERNAME" .Values.secrets.mlflowServing "username") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "SERVING_PASSWORD" .Values.secrets.mlflowServing "password") | nindent 12 }}
+            - name: EXPERIMENT_NAME
+              value: {{ .Values.tracking.experimentName | quote }}
+            - name: MODEL_NAME
+              value: {{ .Values.tracking.modelName | quote }}
+            {{- if eq (include "e2e-mlops.featureLogActive" .) "true" }}
+            - name: PGHOST
+              value: {{ include "e2e-mlops.postgresHost" . | quote }}
+            - name: PGPORT
+              value: {{ .Values.postgres.port | quote }}
+            {{- include "e2e-mlops.secretEnv" (list "POSTGRES_ADMIN_USER" .Values.secrets.postgres "username") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "POSTGRES_ADMIN_PASSWORD" .Values.secrets.postgres "password") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "FEATURE_LOG_USERNAME" .Values.secrets.featureLog "username") | nindent 12 }}
+            {{- include "e2e-mlops.secretEnv" (list "FEATURE_LOG_PASSWORD" .Values.secrets.featureLog "password") | nindent 12 }}
+            - name: FEATURE_LOG_DATABASE
+              value: {{ .Values.featureLog.database | quote }}
+            {{- end }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.tracking.bootstrap.resources | nindent 12 }}
+          # MLflow's auth client needs a temp directory at import (read-only root).
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+{{- end }}

@@ -1,0 +1,46 @@
+{{- if and .Values.inference.enabled (eq (include "e2e-mlops.inferenceMode" .) "deployment") }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "e2e-mlops.fullname" . }}-inference
+  labels:
+    {{- include "e2e-mlops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inference
+spec:
+  replicas: {{ .Values.inference.replicas }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      {{- include "e2e-mlops.selector" (list . "inference") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "e2e-mlops.labels" . | nindent 8 }}
+        app.kubernetes.io/component: inference
+    spec:
+      {{- include "e2e-mlops.podCommon" . | nindent 6 }}
+      containers:
+        - name: inference
+          image: {{ include "e2e-mlops.image" (list . "inference") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.inference.port }}
+          env:
+            {{- include "e2e-mlops.inferenceEnv" . | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.inference.resources | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.inference.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.inference.readinessProbe | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: {{ .Values.inference.tmpSize }}
+{{- end }}

@@ -1,0 +1,71 @@
+{{- if and .Values.inference.enabled (eq (include "e2e-mlops.inferenceMode" .) "kserve") }}
+{{- $k := .Values.inference.kserve }}
+{{- $port := int .Values.inference.port }}
+{{- /* Probes from the shared values, on the port number (Knative allows no port names). */}}
+{{- $liveness := deepCopy .Values.inference.livenessProbe }}
+{{- $_ := set $liveness.httpGet "port" $port }}
+{{- $readiness := deepCopy .Values.inference.readinessProbe }}
+{{- $_ := set $readiness.httpGet "port" $port }}
+{{- /* Knative rejects a pod-level securityContext unless the cluster enables the
+     kubernetes.podspec-securitycontext feature, so the pod settings move to the
+     container (fsGroup has no container equivalent and is not needed: /tmp is an
+     emptyDir). KServe's logger sidecar copies this container's securityContext. */}}
+{{- $securityContext := merge (deepCopy .Values.containerSecurityContext) (omit .Values.podSecurityContext "fsGroup") }}
+# Champion served by KServe: a custom predictor running our inference image, which
+# loads the model from the MLflow registry (MODEL_URI) and answers both the JSON API
+# and the Open Inference Protocol v2. The deploymentMode annotation picks Standard
+# (RawDeployment) or Knative (Serverless); see values `inference.kserve`.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: {{ .Values.tracking.modelName }}
+  labels:
+    {{- include "e2e-mlops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inference
+  annotations:
+    serving.kserve.io/deploymentMode: {{ $k.deploymentMode | quote }}
+    {{- if eq $k.deploymentMode "Standard" }}
+    serving.kserve.io/autoscalerClass: hpa
+    {{- end }}
+spec:
+  predictor:
+    minReplicas: {{ $k.autoscaling.minReplicas }}
+    maxReplicas: {{ $k.autoscaling.maxReplicas }}
+    scaleMetric: {{ $k.autoscaling.metric }}
+    scaleTarget: {{ $k.autoscaling.target }}
+    {{- if eq (include "e2e-mlops.featureLogActive" .) "true" }}
+    logger:
+      mode: all
+      url: {{ include "e2e-mlops.featureLogUrl" . }}
+    {{- end }}
+    serviceAccountName: {{ include "e2e-mlops.serviceAccountName" . }}
+    automountServiceAccountToken: false
+    {{- with .Values.imagePullSecrets }}
+    imagePullSecrets:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    containers:
+      - name: kserve-container
+        image: {{ include "e2e-mlops.image" (list . "inference") }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - containerPort: {{ $port }}
+            protocol: TCP
+        env:
+          {{- include "e2e-mlops.inferenceEnv" . | nindent 10 }}
+        securityContext:
+          {{- toYaml $securityContext | nindent 10 }}
+        resources:
+          {{- toYaml .Values.inference.resources | nindent 10 }}
+        livenessProbe:
+          {{- toYaml $liveness | nindent 10 }}
+        readinessProbe:
+          {{- toYaml $readiness | nindent 10 }}
+        volumeMounts:
+          - name: tmp
+            mountPath: /tmp
+    volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: {{ .Values.inference.tmpSize }}
+{{- end }}

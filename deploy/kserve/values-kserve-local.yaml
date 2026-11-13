@@ -1,0 +1,43 @@
+# KServe (kserve-resources chart) for the local profile. Installed by
+# scripts/kserve-up.sh local; chart version in versions.env.
+#
+# Standard deployment mode (called RawDeployment before KServe 0.15): plain
+# Deployments and Services, no Knative or service mesh, hence no scale-to-zero.
+kserve:
+  controller:
+    deploymentMode: Standard
+    image: docker.io/kserve/kserve-controller
+    tag: v0.21.0
+    imagePullPolicy: IfNotPresent     # images are imported by scripts/local-up.sh
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+      limits: {cpu: 300m, memory: 256Mi}
+    rbacProxyImage: quay.io/brancz/kube-rbac-proxy:v0.18.0
+    rbacProxy:
+      resources:
+        requests: {cpu: 10m, memory: 24Mi}
+        limits: {cpu: 50m, memory: 64Mi}
+  agent:
+    image: docker.io/kserve/agent
+    tag: v0.21.0
+  # Defaults for InferenceServices that set no resources (ours always do).
+  inferenceservice:
+    resources:
+      requests: {cpu: 100m, memory: 192Mi}
+      limits: {cpu: 500m, memory: 384Mi}
+  # The storage initializer is not used (the predictor loads from the MLflow
+  # registry), but its defaults are kept small in case someone enables it.
+  storage:
+    resources:
+      requests: {cpu: 50m, memory: 64Mi}
+      limits: {cpu: 200m, memory: 256Mi}
+
+# Not a KServe chart value. KServe's chart hardcodes the logger sidecar's resources
+# in the inferenceservice-config ConfigMap, so scripts/kserve-up.sh patches the
+# `agent` key (which sizes the injected container) and the `logger` key with these.
+# tests/deploy/test_chart.py adds them to the predictor pod in the budget check.
+loggerSidecar:
+  cpuRequest: 25m
+  memoryRequest: 64Mi
+  cpuLimit: 100m
+  memoryLimit: 128Mi
