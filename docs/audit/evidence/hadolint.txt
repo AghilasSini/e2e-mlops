@@ -1,0 +1,14 @@
+# hadolint v2.12.0 Dockerfile (task 6.1)
+Dockerfile:3 DL3027 warning: Do not use apt as it is meant to be a end-user tool, use apt-get or apt-cache instead
+Dockerfile:7 DL3042 warning: Avoid use of cache directory with pip. Use `pip install --no-cache-dir <package>`
+exit=1
+
+# Image build check (task 6.1). Docker daemon not accessible to the auditor (socket permission denied),
+# so the build was NOT executed. Base-image apt sources checked instead on 2026-11-09:
+http://deb.debian.org/debian/dists/buster/Release                      -> 404
+http://deb.debian.org/debian/dists/buster-updates/Release              -> 404
+http://security.debian.org/debian-security/dists/buster/updates/Release -> 404
+http://archive.debian.org/debian/dists/buster/Release                  -> 200
+Docker Hub tag python:3.8-slim-buster last_updated 2023-06-13 (no longer rebuilt).
+Inference: 'RUN apt update -y && apt install awscli -y' fails on the default sources, so the image
+no longer builds as written. Needs confirmation with 'docker build .' on a machine with Docker.

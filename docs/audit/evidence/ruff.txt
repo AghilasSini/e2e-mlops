@@ -1,0 +1,37 @@
+# ruff 0.17.4 check --select E,F,B,S --ignore E501 (src, app.py, main.py, template.py)
+app.py:4:18: F401 [*] `pandas` imported but unused
+app.py:18:5: S605 Starting a process with a shell: seems safe, but may be changed in the future; consider rewriting without `shell`
+app.py:18:15: S607 Starting a process with a partial executable path
+app.py:55:18: S104 Possible binding to all interfaces
+src/mlProject/components/data_ingestion.py:18:31: S310 Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected.
+src/mlProject/components/data_validation.py:3:8: F401 [*] `os` imported but unused
+src/mlProject/components/data_validation.py:5:23: F401 [*] `mlProject.logger` imported but unused
+src/mlProject/components/model_evaluation.py:1:8: F401 [*] `os` imported but unused
+src/mlProject/components/model_evaluation.py:13:1: F403 `from mlProject.constants import *` used; unable to detect undefined names
+src/mlProject/components/model_evaluation.py:14:36: F401 [*] `mlProject.utils.common.read_yaml` imported but unused
+src/mlProject/components/model_evaluation.py:14:47: F401 [*] `mlProject.utils.common.create_directories` imported but unused
+src/mlProject/components/model_evaluation.py:43:28: F405 `Path` may be undefined, or defined from star imports
+src/mlProject/components/model_trainer.py:3:23: F401 [*] `mlProject.logger` imported but unused
+src/mlProject/components/model_trainer.py:21:9: F841 Local variable `test_x` is assigned to but never used
+src/mlProject/components/model_trainer.py:23:9: F841 Local variable `test_y` is assigned to but never used
+src/mlProject/config/configuration.py:1:1: F403 `from mlProject.constants import *` used; unable to detect undefined names
+src/mlProject/config/configuration.py:7:34: F405 `CONFIG_FILE_PATH` may be undefined, or defined from star imports
+src/mlProject/config/configuration.py:8:34: F405 `PARAMS_FILE_PATH` may be undefined, or defined from star imports
+src/mlProject/config/configuration.py:9:34: F405 `SCHEMA_FILE_PATH` may be undefined, or defined from star imports
+src/mlProject/pipeline/prediction.py:2:17: F401 [*] `numpy` imported but unused
+src/mlProject/pipeline/prediction.py:3:18: F401 [*] `pandas` imported but unused
+src/mlProject/pipeline/stage_01_data_ingestion.py:3:23: F401 [*] `mlProject.logger` imported but unused
+src/mlProject/pipeline/stage_02_data_validation.py:6:23: F811 [*] Redefinition of unused `logger` from line 3: `logger` redefined here
+src/mlProject/pipeline/stage_02_data_validation.py:6:23: F401 [*] `mlProject.logger` imported but unused
+src/mlProject/pipeline/stage_03_data_transformation.py:7:23: F811 [*] Redefinition of unused `logger` from line 4: `logger` redefined here
+src/mlProject/pipeline/stage_03_data_transformation.py:7:23: F401 [*] `mlProject.logger` imported but unused
+src/mlProject/pipeline/stage_04_model_trainer.py:5:21: F401 [*] `pathlib.Path` imported but unused
+src/mlProject/pipeline/stage_04_model_trainer.py:7:23: F811 [*] Redefinition of unused `logger` from line 4: `logger` redefined here
+src/mlProject/pipeline/stage_04_model_trainer.py:7:23: F401 [*] `mlProject.logger` imported but unused
+src/mlProject/pipeline/stage_05_model_evaluation.py:5:21: F401 [*] `pathlib.Path` imported but unused
+src/mlProject/pipeline/stage_05_model_evaluation.py:7:23: F811 [*] Redefinition of unused `logger` from line 4: `logger` redefined here
+src/mlProject/pipeline/stage_05_model_evaluation.py:7:23: F401 [*] `mlProject.logger` imported but unused
+src/mlProject/utils/common.py:34:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+Found 33 errors.
+[*] 20 fixable with `--fix` (2 unsafe fixes available with `--fix --unsafe-fixes`).
+exit=1

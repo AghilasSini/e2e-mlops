@@ -1,0 +1,378 @@
+# pip-audit 2.10.1 against the Python 3.8 environment resolved from requirements.txt (2026-11-09)
+# Input: freeze-py38.txt (unpinned requirements resolve to whatever is newest at install time, so this result drifts)
+WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies
+WARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes
+Found 370 known vulnerabilities in 26 packages
+Name           Version ID                  Fix Versions
+-------------- ------- ------------------- -------------
+anyio          4.5.2   PYSEC-2026-4025     4.14.2
+anyio          4.5.2   PYSEC-2026-4024     4.14.2
+bleach         6.1.0   GHSA-gj48-438w-jh9v 6.4.0
+bleach         6.1.0   GHSA-8rfp-98v4-mmr6 6.4.0
+flask          2.3.3   PYSEC-2026-2151     3.1.3
+flask          2.3.3   PYSEC-2026-2151     3.1.3
+flask-cors     5.0.0   PYSEC-2026-1383     6.0.0
+flask-cors     5.0.0   PYSEC-2026-1385     6.0.0
+flask-cors     5.0.0   PYSEC-2026-1384     6.0.0
+flask-cors     5.0.0   PYSEC-2026-1383     6.0.0
+flask-cors     5.0.0   PYSEC-2026-1384     6.0.0
+flask-cors     5.0.0   PYSEC-2026-1385     6.0.0
+fonttools      4.57.0  CVE-2025-66034      4.60.2
+gunicorn       20.1.0  PYSEC-2026-1434     22.0.0
+gunicorn       20.1.0  PYSEC-2026-1433     22.0.0
+gunicorn       20.1.0  PYSEC-2026-1434     22.0.0
+gunicorn       20.1.0  PYSEC-2026-1433     22.0.0
+jupyter-server 2.14.2  PYSEC-2026-67       2.18.0
+jupyter-server 2.14.2  PYSEC-2026-2187     2.18.0
+jupyter-server 2.14.2  PYSEC-2026-68       2.18.0
+jupyter-server 2.14.2  PYSEC-2026-69       2.18.0
+jupyter-server 2.14.2  PYSEC-2026-67       2.18.0
+jupyter-server 2.14.2  PYSEC-2026-69       2.18.0
+jupyter-server 2.14.2  PYSEC-2026-68       2.18.0
+jupyter-server 2.14.2  PYSEC-2026-366      2.20.0
+jupyter-server 2.14.2  PYSEC-2026-366      2.20.0
+jupyter-server 2.14.2  PYSEC-2026-2187     2.18.0
+jupyter-server 2.14.2  PYSEC-2026-2532     2.18.2
+jupyter-server 2.14.2  PYSEC-2026-3472
+jupyter-server 2.14.2  PYSEC-2026-4054     2.21.0
+jupyterlab     4.3.8   PYSEC-2026-1482     4.4.8
+jupyterlab     4.3.8   PYSEC-2026-164      4.5.7
+jupyterlab     4.3.8   PYSEC-2026-2537     4.5.7
+jupyterlab     4.3.8   PYSEC-2026-164      4.5.7
+jupyterlab     4.3.8   PYSEC-2026-1482     4.4.8
+jupyterlab     4.3.8   PYSEC-2026-2538     4.5.7
+jupyterlab     4.3.8   PYSEC-2026-2537     4.5.7
+jupyterlab     4.3.8   PYSEC-2026-3671     4.5.10,4.6.2
+jupyterlab     4.3.8   PYSEC-2026-3672     4.5.10,4.6.2
+jupyterlab     4.3.8   PYSEC-2026-4055     4.5.11,4.6.4
+jupyterlab     4.3.8   PYSEC-2026-3672     4.5.10,4.6.2
+jupyterlab     4.3.8   PYSEC-2026-3671     4.5.10,4.6.2
+jupyterlab     4.3.8   PYSEC-2026-4056     4.5.11,4.6.4
+jupyterlab     4.3.8   CVE-2026-67338      4.5.9
+jupyterlab     4.3.8   GHSA-h5v5-8746-g7mm 4.5.10,4.6.2
+jupyterlab     4.3.8   CVE-2026-73626      4.5.10,4.6.2
+markdown       3.7     PYSEC-2026-89       3.8.1
+markdown       3.7     PYSEC-2026-89
+mlflow         2.2.2   PYSEC-2023-68       2.3.1
+mlflow         2.2.2   PYSEC-2023-69       2.3.0
+mlflow         2.2.2   PYSEC-2023-68       2.3.1
+mlflow         2.2.2   PYSEC-2023-69       2.3.1
+mlflow         2.2.2   PYSEC-2023-308      2.5.0
+mlflow         2.2.2   PYSEC-2023-280      2.6.0
+mlflow         2.2.2   PYSEC-2026-420      2.8.1
+mlflow         2.2.2   PYSEC-2026-415      2.8.0
+mlflow         2.2.2   PYSEC-2026-417      2.9.2
+mlflow         2.2.2   PYSEC-2026-1661     2.9.0
+mlflow         2.2.2   PYSEC-2023-260      2.9.0
+mlflow         2.2.2   PYSEC-2023-281      2.9.2
+mlflow         2.2.2   PYSEC-2023-309      2.9.2
+mlflow         2.2.2   PYSEC-2023-253      2.9.2
+mlflow         2.2.2   PYSEC-2026-1652     2.9.2
+mlflow         2.2.2   PYSEC-2026-1659     2.9.2
+mlflow         2.2.2   PYSEC-2023-252      2.9.2
+mlflow         2.2.2   PYSEC-2026-1662     2.9.2
+mlflow         2.2.2   PYSEC-2026-422      2.9.2
+mlflow         2.2.2   PYSEC-2026-416      2.9.2
+mlflow         2.2.2   PYSEC-2023-252      2.9.2
+mlflow         2.2.2   PYSEC-2023-253      2.9.2
+mlflow         2.2.2   PYSEC-2024-240      2.10.0
+mlflow         2.2.2   PYSEC-2024-241      2.10.0
+mlflow         2.2.2   PYSEC-2023-260      2.9.1
+mlflow         2.2.2   PYSEC-2026-1650     2.12.1
+mlflow         2.2.2   PYSEC-2026-1653     2.12.1
+mlflow         2.2.2   PYSEC-2026-1655
+mlflow         2.2.2   PYSEC-2024-243      2.10.0
+mlflow         2.2.2   PYSEC-2026-1649
+mlflow         2.2.2   PYSEC-2026-1641
+mlflow         2.2.2   PYSEC-2024-51       2.10.1
+mlflow         2.2.2   PYSEC-2026-1654
+mlflow         2.2.2   PYSEC-2026-1643
+mlflow         2.2.2   PYSEC-2026-1636
+mlflow         2.2.2   PYSEC-2026-1644
+mlflow         2.2.2   PYSEC-2026-1647
+mlflow         2.2.2   PYSEC-2026-1663
+mlflow         2.2.2   PYSEC-2026-1651
+mlflow         2.2.2   PYSEC-2026-1657
+mlflow         2.2.2   PYSEC-2026-1660
+mlflow         2.2.2   PYSEC-2024-242      2.11.3
+mlflow         2.2.2   PYSEC-2026-1645     2.11.3
+mlflow         2.2.2   PYSEC-2026-1638     2.17.0rc0
+mlflow         2.2.2   PYSEC-2025-17       2.19.0
+mlflow         2.2.2   PYSEC-2023-308      2.5.0
+mlflow         2.2.2   PYSEC-2023-280      2.6.0
+mlflow         2.2.2   PYSEC-2025-17       2.19.0
+mlflow         2.2.2   PYSEC-2026-1658
+mlflow         2.2.2   PYSEC-2026-1637
+mlflow         2.2.2   PYSEC-2023-281      2.9.2
+mlflow         2.2.2   PYSEC-2024-241      2.10.0
+mlflow         2.2.2   PYSEC-2024-240      2.10.0
+mlflow         2.2.2   PYSEC-2024-224      2.16.0
+mlflow         2.2.2   PYSEC-2024-242      2.11.3
+mlflow         2.2.2   PYSEC-2024-243      2.10.0
+mlflow         2.2.2   PYSEC-2024-239      2.9.0
+mlflow         2.2.2   PYSEC-2024-244      2.12.1
+mlflow         2.2.2   PYSEC-2023-309      2.9.2
+mlflow         2.2.2   PYSEC-2024-224      2.16.0
+mlflow         2.2.2   PYSEC-2025-52       2.22.2,3.1.0
+mlflow         2.2.2   PYSEC-2025-52       3.1.0
+mlflow         2.2.2   PYSEC-2026-1642     2.22.0rc0
+mlflow         2.2.2   PYSEC-2026-1640     2.22.4,3.0.0
+mlflow         2.2.2   PYSEC-2026-1656     3.5.0
+mlflow         2.2.2   PYSEC-2026-1639     3.4.0rc0
+mlflow         2.2.2   PYSEC-2024-51       2.10.1
+mlflow         2.2.2   PYSEC-2026-2661     3.8.0rc0
+mlflow         2.2.2   PYSEC-2026-421      3.8.0rc0
+mlflow         2.2.2   PYSEC-2026-2658     3.8.0rc0
+mlflow         2.2.2   PYSEC-2026-2656     3.9.0rc0
+mlflow         2.2.2   PYSEC-2026-2657
+mlflow         2.2.2   PYSEC-2026-425      3.9.0rc0
+mlflow         2.2.2   PYSEC-2026-423      3.8.1
+mlflow         2.2.2   PYSEC-2026-419
+mlflow         2.2.2   PYSEC-2026-94       3.11.0rc0
+mlflow         2.2.2   PYSEC-2026-93       3.11.1
+mlflow         2.2.2   PYSEC-2026-2221     3.11.0
+mlflow         2.2.2   PYSEC-2026-2655     3.11.0
+mlflow         2.2.2   PYSEC-2026-2219     3.9.0
+mlflow         2.2.2   PYSEC-2026-2654     3.10.0
+mlflow         2.2.2   PYSEC-2026-424      3.9.0
+mlflow         2.2.2   PYSEC-2026-94       3.11.0rc0
+mlflow         2.2.2   PYSEC-2026-93       3.11.0rc0
+mlflow         2.2.2   PYSEC-2026-195      3.10.1
+mlflow         2.2.2   PYSEC-2026-2660     3.10.0
+mlflow         2.2.2   PYSEC-2026-415      2.8.0
+mlflow         2.2.2   PYSEC-2026-417      2.9.2
+mlflow         2.2.2   PYSEC-2026-416      2.9.2
+mlflow         2.2.2   PYSEC-2026-424      3.9.0
+mlflow         2.2.2   PYSEC-2026-419
+mlflow         2.2.2   PYSEC-2026-421      3.8.0rc0
+mlflow         2.2.2   PYSEC-2026-425      3.9.0rc0
+mlflow         2.2.2   PYSEC-2026-420      2.8.1
+mlflow         2.2.2   PYSEC-2026-423      3.8.1
+mlflow         2.2.2   PYSEC-2026-422      2.9.2
+mlflow         2.2.2   PYSEC-2026-2220     3.10.0
+mlflow         2.2.2   PYSEC-2026-1644
+mlflow         2.2.2   PYSEC-2026-1645     2.11.3
+mlflow         2.2.2   PYSEC-2026-1643
+mlflow         2.2.2   PYSEC-2026-1642     2.22.0rc0
+mlflow         2.2.2   PYSEC-2026-1641
+mlflow         2.2.2   PYSEC-2026-1647
+mlflow         2.2.2   PYSEC-2026-1650     2.12.1
+mlflow         2.2.2   PYSEC-2026-1663
+mlflow         2.2.2   PYSEC-2026-1652     2.9.2
+mlflow         2.2.2   PYSEC-2026-1651
+mlflow         2.2.2   PYSEC-2026-1653     2.12.1
+mlflow         2.2.2   PYSEC-2026-1649
+mlflow         2.2.2   PYSEC-2026-1638     2.17.0rc0
+mlflow         2.2.2   PYSEC-2026-1654
+mlflow         2.2.2   PYSEC-2026-1655
+mlflow         2.2.2   PYSEC-2026-1640     2.22.4,3.0.0
+mlflow         2.2.2   PYSEC-2026-1660
+mlflow         2.2.2   PYSEC-2026-1639     3.4.0rc0
+mlflow         2.2.2   PYSEC-2026-1636
+mlflow         2.2.2   PYSEC-2026-1657
+mlflow         2.2.2   PYSEC-2026-1656     3.5.0
+mlflow         2.2.2   PYSEC-2026-1661     2.9.0
+mlflow         2.2.2   PYSEC-2026-1658
+mlflow         2.2.2   PYSEC-2026-1637
+mlflow         2.2.2   PYSEC-2026-1659     2.9.2
+mlflow         2.2.2   PYSEC-2026-1662     2.9.2
+mlflow         2.2.2   PYSEC-2026-2659     3.11.0rc0
+mlflow         2.2.2   PYSEC-2026-2222     3.11.0
+mlflow         2.2.2   PYSEC-2026-2219     3.9.0
+mlflow         2.2.2   PYSEC-2026-2220     3.11.0rc0
+mlflow         2.2.2   PYSEC-2026-2221     3.10.0
+mlflow         2.2.2   PYSEC-2026-2222     3.11.0
+mlflow         2.2.2   PYSEC-2026-2654     3.10.0
+mlflow         2.2.2   PYSEC-2026-2655     3.11.0
+mlflow         2.2.2   PYSEC-2026-2656     3.9.0rc0
+mlflow         2.2.2   PYSEC-2026-2657
+mlflow         2.2.2   PYSEC-2026-2660     3.10.0
+mlflow         2.2.2   PYSEC-2026-2659     3.11.0rc0
+mlflow         2.2.2   PYSEC-2026-2661     3.8.0rc0
+mlflow         2.2.2   PYSEC-2026-2658     3.8.0rc0
+mlflow         2.2.2   PYSEC-2026-195      3.10.1
+mlflow         2.2.2   PYSEC-2026-3687     3.15.0
+mlflow         2.2.2   GHSA-83fm-w79m-64r5 2.3.1
+mlflow         2.2.2   GHSA-gqvg-gmmx-x4hm 3.15.0
+mlflow         2.2.2   CVE-2026-53995      3.17.2
+nbconvert      7.16.6  PYSEC-2026-1691     7.17.0
+nbconvert      7.16.6  PYSEC-2026-2230     7.17.1
+nbconvert      7.16.6  PYSEC-2026-2229     7.17.1
+nbconvert      7.16.6  PYSEC-2026-1691     7.17.0
+nbconvert      7.16.6  PYSEC-2026-2230     7.17.1
+nbconvert      7.16.6  PYSEC-2026-2229     7.17.1
+nbconvert      7.16.6  CVE-2026-6658
+notebook       7.3.3   PYSEC-2026-2538     7.5.6
+notebook       7.3.3   PYSEC-2026-2681     7.5.6
+notebook       7.3.3   PYSEC-2026-2682     7.5.6
+oauthlib       3.3.1   PYSEC-2026-4114     4.0.0
+oauthlib       3.3.1   PYSEC-2026-4114     4.0.0
+oauthlib       3.3.1   CVE-2026-49272      4.0.1
+pillow         10.4.0  PYSEC-2026-2249     12.1.1
+pillow         10.4.0  PYSEC-2026-2250     12.2.0
+pillow         10.4.0  PYSEC-2026-165      12.2.0
+pillow         10.4.0  PYSEC-2026-2874     12.2.0
+pillow         10.4.0  PYSEC-2026-2252     12.2.0
+pillow         10.4.0  PYSEC-2026-165      12.2.0
+pillow         10.4.0  PYSEC-2026-2250     12.2.0
+pillow         10.4.0  PYSEC-2026-2253     12.3.0
+pillow         10.4.0  PYSEC-2026-2255     12.3.0
+pillow         10.4.0  PYSEC-2026-2257     12.3.0
+pillow         10.4.0  PYSEC-2026-2256     12.3.0
+pillow         10.4.0  PYSEC-2026-2254     12.3.0
+pillow         10.4.0  PYSEC-2026-2252     12.2.0
+pillow         10.4.0  PYSEC-2026-2249     12.1.1
+pillow         10.4.0  PYSEC-2026-2874     12.2.0
+pillow         10.4.0  PYSEC-2026-3453     12.3.0
+pillow         10.4.0  PYSEC-2026-3451     12.3.0
+pillow         10.4.0  PYSEC-2026-3493     12.3.0
+pillow         10.4.0  PYSEC-2026-2254     12.3.0
+pillow         10.4.0  PYSEC-2026-2253     12.3.0
+pillow         10.4.0  PYSEC-2026-2256     12.3.0
+pillow         10.4.0  PYSEC-2026-2255     12.3.0
+pillow         10.4.0  PYSEC-2026-3454     12.3.0
+pillow         10.4.0  PYSEC-2026-3451     12.3.0
+pillow         10.4.0  PYSEC-2026-3494     12.3.0
+pillow         10.4.0  PYSEC-2026-3495     12.3.0
+pillow         10.4.0  PYSEC-2026-3496     12.3.0
+pillow         10.4.0  PYSEC-2026-3453     12.3.0
+pillow         10.4.0  PYSEC-2026-3454     12.3.0
+pillow         10.4.0  PYSEC-2026-3495     12.3.0
+pillow         10.4.0  PYSEC-2026-3496     12.3.0
+pillow         10.4.0  PYSEC-2026-3494     12.3.0
+pillow         10.4.0  PYSEC-2026-3493     12.3.0
+pillow         10.4.0  PYSEC-2026-4327     13.0.0
+pillow         10.4.0  PYSEC-2026-4326     13.0.0
+pillow         10.4.0  PYSEC-2026-4340     13.0.0
+pillow         10.4.0  PYSEC-2026-4343     13.0.0
+pillow         10.4.0  PYSEC-2026-4334     13.0.0
+pillow         10.4.0  PYSEC-2026-4337     13.0.0
+pillow         10.4.0  PYSEC-2026-4341     13.0.0
+pillow         10.4.0  PYSEC-2026-4330     13.0.0
+pillow         10.4.0  PYSEC-2026-4338     13.0.0
+pillow         10.4.0  PYSEC-2026-4335     13.0.0
+pillow         10.4.0  PYSEC-2026-4331     13.0.0
+pillow         10.4.0  PYSEC-2026-4332     13.0.0
+pillow         10.4.0  PYSEC-2026-4329     13.0.0
+pillow         10.4.0  CVE-2026-112895     13.0.0
+pillow         10.4.0  CVE-2026-112400     13.0.0
+pillow         10.4.0  CVE-2026-112897     13.0.0
+pillow         10.4.0  CVE-2026-112395     13.0.0
+pillow         10.4.0  CVE-2026-112404     13.0.0
+pillow         10.4.0  CVE-2026-112899     13.0.0
+pillow         10.4.0  CVE-2026-112900     13.0.0
+pillow         10.4.0  CVE-2026-112893     13.0.0
+pillow         10.4.0  CVE-2026-112891     13.0.0
+pillow         10.4.0  CVE-2026-112390     13.0.0
+pillow         10.4.0  CVE-2026-112401     13.0.0
+pillow         10.4.0  CVE-2026-112391     13.0.0
+pillow         10.4.0  CVE-2026-112894     13.0.0
+pillow         10.4.0  CVE-2026-112406     13.0.0
+pillow         10.4.0  CVE-2026-112399     13.0.0
+pillow         10.4.0  CVE-2026-112892     13.0.0
+pillow         10.4.0  CVE-2026-112393     13.0.0
+pillow         10.4.0  CVE-2026-96638      13.0.0
+pillow         10.4.0  CVE-2026-96640      13.0.0
+pillow         10.4.0  CVE-2026-96778      13.0.0
+protobuf       4.25.9  PYSEC-2026-1805     5.29.6,6.33.5
+protobuf       4.25.9  PYSEC-2026-1805     5.29.6,6.33.5
+pyarrow        11.0.0  PYSEC-2023-238      14.0.1
+pyarrow        11.0.0  PYSEC-2023-238      14.0.1
+pyarrow        11.0.0  PYSEC-2024-161      17.0.0
+pygments       2.19.2  PYSEC-2026-2987     2.20.0
+pygments       2.19.2  PYSEC-2026-2987     2.20.0
+pyjwt          2.9.0   PYSEC-2026-120      2.12.0
+pyjwt          2.9.0   PYSEC-2026-120      2.12.0
+pyjwt          2.9.0   PYSEC-2025-183
+pyjwt          2.9.0   PYSEC-2026-179      2.13.0
+pyjwt          2.9.0   PYSEC-2026-175      2.13.0
+pyjwt          2.9.0   PYSEC-2026-177      2.13.0
+pyjwt          2.9.0   PYSEC-2026-178      2.13.0
+pyjwt          2.9.0   PYSEC-2026-176      2.12.1
+pyjwt          2.9.0   PYSEC-2026-177      2.13.0
+pyjwt          2.9.0   PYSEC-2026-179      2.13.0
+pyjwt          2.9.0   PYSEC-2026-176      2.13.0
+pyjwt          2.9.0   PYSEC-2026-178      2.13.0
+pyjwt          2.9.0   PYSEC-2026-4145     2.14.0
+pyjwt          2.9.0   PYSEC-2026-4149     2.14.0
+pyjwt          2.9.0   PYSEC-2026-4152     2.14.0
+pyjwt          2.9.0   PYSEC-2026-4144     2.14.0
+pyjwt          2.9.0   PYSEC-2026-4148     2.14.0
+pyjwt          2.9.0   PYSEC-2026-4140     2.14.0
+pyjwt          2.9.0   PYSEC-2026-4141     2.15.0
+pyjwt          2.9.0   PYSEC-2026-4147     2.14.0
+pyjwt          2.9.0   PYSEC-2026-4183     2.15.0
+pyjwt          2.9.0   GHSA-pxh4-856f-4h89 2.14.0
+requests       2.32.4  PYSEC-2026-2275     2.33.0
+requests       2.32.4  PYSEC-2026-2275     2.33.0
+scikit-learn   1.3.2   PYSEC-2024-110      1.5.0
+scikit-learn   1.3.2   PYSEC-2024-110      1.5.0
+setuptools     75.3.4  PYSEC-2026-3447     83.0.0
+setuptools     75.3.4  PYSEC-2026-3447     83.0.0
+setuptools     75.3.4  PYSEC-2025-49       78.1.1
+setuptools     75.3.4  GHSA-xmj3-9gf7-h52w 84.1.0
+soupsieve      2.7     PYSEC-2026-3072     2.8.4
+soupsieve      2.7     PYSEC-2026-3071     2.8.4
+soupsieve      2.7     PYSEC-2026-3072     2.8.4
+soupsieve      2.7     PYSEC-2026-3071     2.8.4
+soupsieve      2.7     PYSEC-2026-4170     2.9.0
+soupsieve      2.7     PYSEC-2026-4171     2.9.0
+sqlparse       0.5.5   PYSEC-2026-3697     0.6.0
+sqlparse       0.5.5   PYSEC-2026-3696     0.6.0
+sqlparse       0.5.5   PYSEC-2026-3698     0.6.0
+sqlparse       0.5.5   PYSEC-2026-3699     0.6.0
+sqlparse       0.5.5   PYSEC-2026-3698     0.6.0
+sqlparse       0.5.5   PYSEC-2026-3697     0.6.0
+sqlparse       0.5.5   PYSEC-2026-3699     0.6.0
+sqlparse       0.5.5   PYSEC-2026-3696     0.6.0
+sqlparse       0.5.5   PYSEC-2026-3923     0.6.0
+tornado        6.4.2   PYSEC-2026-1974     6.5
+tornado        6.4.2   PYSEC-2026-2287     6.5.5
+tornado        6.4.2   PYSEC-2026-140      6.5.5
+tornado        6.4.2   PYSEC-2026-2287     6.5.5
+tornado        6.4.2   PYSEC-2026-140      6.5.5
+tornado        6.4.2   PYSEC-2026-3388     6.5.6
+tornado        6.4.2   PYSEC-2026-3387     6.5.6
+tornado        6.4.2   PYSEC-2026-3389     6.5.6
+tornado        6.4.2   PYSEC-2026-1974     6.5
+tornado        6.4.2   PYSEC-2025-266      6.5.3
+tornado        6.4.2   PYSEC-2025-265      6.5.3
+tornado        6.4.2   PYSEC-2025-267      6.5.3
+tornado        6.4.2   PYSEC-2026-2287     6.5.5
+tornado        6.4.2   PYSEC-2026-3387     6.5.6
+tornado        6.4.2   PYSEC-2026-3388     6.5.6
+tornado        6.4.2   PYSEC-2026-3389     6.5.6
+tornado        6.4.2   PYSEC-2025-265      6.5.3
+tornado        6.4.2   PYSEC-2025-267      6.5.3
+tornado        6.4.2   PYSEC-2025-266      6.5.3
+tornado        6.4.2   PYSEC-2026-3928     6.5.8
+tornado        6.4.2   GHSA-pw6j-qg29-8w7f 6.5.7
+tornado        6.4.2   GHSA-chx6-46f5-w4vp 6.5.9
+tornado        6.4.2   GHSA-c2m8-h5v5-343r 6.5.9
+tornado        6.4.2   GHSA-3hv7-mjh2-fv65 6.5.9
+tornado        6.4.2   GHSA-8423-8fgw-73vq 6.5.8
+tornado        6.4.2   CVE-2026-116577     6.6
+tornado        6.4.2   CVE-2026-115927     6.6
+tornado        6.4.2   CVE-2026-116578     6.6
+urllib3        2.2.3   PYSEC-2026-1997     2.5.0
+urllib3        2.2.3   PYSEC-2026-1999     2.5.0
+urllib3        2.2.3   PYSEC-2026-1998     2.6.0
+urllib3        2.2.3   PYSEC-2026-1994     2.6.0
+urllib3        2.2.3   PYSEC-2026-1996     2.6.3
+urllib3        2.2.3   PYSEC-2026-141      2.7.0
+urllib3        2.2.3   PYSEC-2026-141      2.7.0
+urllib3        2.2.3   PYSEC-2026-1999     2.5.0
+urllib3        2.2.3   PYSEC-2026-1998     2.6.0
+urllib3        2.2.3   PYSEC-2026-1997     2.5.0
+urllib3        2.2.3   PYSEC-2026-1994     2.6.0
+urllib3        2.2.3   PYSEC-2026-1996     2.6.3
+urllib3        2.2.3   PYSEC-2026-4177     2.8.0
+urllib3        2.2.3   PYSEC-2026-4175     2.8.0
+werkzeug       3.0.6   PYSEC-2026-2046     3.1.4
+werkzeug       3.0.6   PYSEC-2026-2044     3.1.5
+werkzeug       3.0.6   PYSEC-2026-2320     3.1.6
+werkzeug       3.0.6   PYSEC-2026-2046     3.1.4
+werkzeug       3.0.6   PYSEC-2026-2044     3.1.5
+werkzeug       3.0.6   PYSEC-2026-2320     3.1.6
+werkzeug       3.0.6   PYSEC-2026-4312     3.1.9
+exit=1

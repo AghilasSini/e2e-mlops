@@ -1,0 +1,116 @@
+# Reproducibility log — 2026-11-09 — commit 22d8919
+# Python: Python 3.8.20   venv: isolated uv venv in scratch
+# MLFLOW_TRACKING_URI=file:./mlruns ; no DagsHub/AWS credentials set
+
+### STEP: pip install -r requirements.txt
+$ uv pip install --python $SCRATCH/py38/bin/python -r requirements.txt
+ + smmap==5.0.3
+ + sniffio==1.3.1
+ + soupsieve==2.7
+ + sqlalchemy==2.0.57
+ + sqlparse==0.5.5
+ + stack-data==0.6.3
+ + tabulate==0.9.0
+ + terminado==0.18.1
+ + threadpoolctl==3.5.0
+ + tinycss2==1.2.1
+ + tomli==2.5.0
+ + tornado==6.4.2
+ + tqdm==4.70.1
+ + traitlets==5.14.3
+ + types-pyyaml==6.0.12.20241230
+ + typing-extensions==4.13.2
+ + tzdata==2026.6
+ + uri-template==1.3.0
+ + urllib3==2.2.3
+ + wcwidth==0.8.5
+ + webcolors==24.8.0
+ + webencodings==0.5.1
+ + websocket-client==1.8.0
+ + werkzeug==3.0.6
+ + zipp==3.20.2
+### RESULT: pip install -r requirements.txt -> exit=0 (7s) PASS
+
+### STEP: pip freeze (resolved versions)
+$ uv pip freeze --python $SCRATCH/py38/bin/python
+smmap==5.0.3
+sniffio==1.3.1
+soupsieve==2.7
+sqlalchemy==2.0.57
+sqlparse==0.5.5
+stack-data==0.6.3
+tabulate==0.9.0
+terminado==0.18.1
+threadpoolctl==3.5.0
+tinycss2==1.2.1
+tomli==2.5.0
+tornado==6.4.2
+tqdm==4.70.1
+traitlets==5.14.3
+types-pyyaml==6.0.12.20241230
+typing-extensions==4.13.2
+tzdata==2026.6
+uri-template==1.3.0
+urllib3==2.2.3
+wcwidth==0.8.5
+webcolors==24.8.0
+webencodings==0.5.1
+websocket-client==1.8.0
+werkzeug==3.0.6
+zipp==3.20.2
+### RESULT: pip freeze (resolved versions) -> exit=0 (0s) PASS
+
+### STEP: python main.py (training pipeline, offline: data.zip already tracked)
+$ $SCRATCH/py38/bin/python main.py
+  File "main.py", line 82, in <module>
+    data_evaluation.main()
+  File "$SCRATCH/repro-py38/src/mlProject/pipeline/stage_05_model_evaluation.py", line 18, in main
+    model_trainer.log_into_mlflow()
+  File "$SCRATCH/repro-py38/src/mlProject/components/model_evaluation.py", line 57, in log_into_mlflow
+    mlflow.sklearn.log_model(model,"model")
+  File "$SCRATCH/py38/lib/python3.8/site-packages/mlflow/sklearn/__init__.py", line 424, in log_model
+    return Model.log(
+  File "$SCRATCH/py38/lib/python3.8/site-packages/mlflow/models/model.py", line 552, in log
+    mlflow.tracking.fluent.log_artifacts(local_path, mlflow_model.artifact_path)
+  File "$SCRATCH/py38/lib/python3.8/site-packages/mlflow/tracking/fluent.py", line 817, in log_artifacts
+    MlflowClient().log_artifacts(run_id, local_dir, artifact_path)
+  File "$SCRATCH/py38/lib/python3.8/site-packages/mlflow/tracking/client.py", line 1069, in log_artifacts
+    self._tracking_client.log_artifacts(run_id, local_dir, artifact_path)
+  File "$SCRATCH/py38/lib/python3.8/site-packages/mlflow/tracking/_tracking_service/client.py", line 448, in log_artifacts
+    self._get_artifact_repo(run_id).log_artifacts(local_dir, artifact_path)
+  File "$SCRATCH/py38/lib/python3.8/site-packages/mlflow/store/artifact/local_artifact_repo.py", line 58, in log_artifacts
+    dir_util.copy_tree(src=local_dir, dst=artifact_dir, preserve_mode=0, preserve_times=0)
+  File "$SCRATCH/py38/lib/python3.8/site-packages/setuptools/_distutils/dir_util.py", line 155, in copy_tree
+    return list(itertools.chain.from_iterable(map(copy_one, names)))
+  File "$SCRATCH/py38/lib/python3.8/site-packages/setuptools/_distutils/dir_util.py", line 197, in _copy_one
+    file_util.copy_file(
+  File "$SCRATCH/py38/lib/python3.8/site-packages/setuptools/_distutils/file_util.py", line 104, in copy_file
+    from distutils._modified import newer
+ModuleNotFoundError: No module named 'distutils._modified'
+### RESULT: python main.py (training pipeline, offline: data.zip already tracked) -> exit=1 (5s) FAIL
+
+### artifacts after run:
+Validation status : True
+{
+    "rmse": 0.8110375544502367,
+    "mae": 0.6660322875391319,
+    "r2": 0.047374556643531296
+}
+### STEP: python app.py + HTTP checks
+GET / -> 200
+POST /predict (valid) -> [5.62714218] [200] 
+POST /predict (missing fields) -> something is wrong [200]
+GET /train (no auth) -> Successfully trained [200]
+### app server log (tail):
+[2026-11-09 14:52:12,368:INFO: _internal: 127.0.0.1 - - [09/Nov/2026 14:52:12] "POST /predict HTTP/1.1" 200 -]
+The Exception message is:  400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+[2026-11-09 14:52:12,375:INFO: _internal: 127.0.0.1 - - [09/Nov/2026 14:52:12] "POST /predict HTTP/1.1" 200 -]
+Traceback (most recent call last):
+  File "$SCRATCH/repro-py38/main.py", line 1, in <module>
+    from mlProject import logger
+ModuleNotFoundError: No module named 'mlProject'
+[2026-11-09 14:52:12,410:INFO: _internal: 127.0.0.1 - - [09/Nov/2026 14:52:12] "GET /train HTTP/1.1" 200 -]
+### RESULT: python app.py + HTTP checks -> done
+
+### working-tree check of the audited repo (must be unchanged by this script)
+no tracked changes outside pre-existing mlruns deletions

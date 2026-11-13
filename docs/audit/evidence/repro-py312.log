@@ -1,0 +1,42 @@
+# Reproducibility log — 2026-11-09 — commit 22d8919
+# Python: Python 3.12.3   venv: isolated uv venv in scratch
+# MLFLOW_TRACKING_URI=file:./mlruns ; no DagsHub/AWS credentials set
+
+### STEP: pip install -r requirements.txt
+$ uv pip install --python $SCRATCH/py312/bin/python -r requirements.txt
+        File
+      "$SCRATCH/uvcache/builds-v0/.tmpFmqhA2/lib/python3.12/site-packages/setuptools/build_meta.py",
+      line 520, in run_setup
+          super().run_setup(setup_script=setup_script)
+        File
+      "$SCRATCH/uvcache/builds-v0/.tmpFmqhA2/lib/python3.12/site-packages/setuptools/build_meta.py",
+      line 317, in run_setup
+          exec(code, locals())  # noqa: S102 # exec is intentional here
+          ^^^^^^^^^^^^^^^^^^^^
+        File "<string>", line 34, in <module>
+      ModuleNotFoundError: No module named 'pkg_resources'
+
+      hint: This error likely indicates that `pyarrow@11.0.0` depends on
+      `pkg_resources`, but doesn't declare it as a build dependency. If
+      `pyarrow` is a first-party package, consider adding `pkg_resources`
+      to its `build-system.requires`. Otherwise, either add it to your
+      `pyproject.toml` under:
+
+      [tool.uv.extra-build-dependencies]
+      pyarrow = ["pkg_resources"]
+
+      or `uv pip install pkg_resources` into the environment and re-run with
+      `--no-build-isolation`.
+  help: `pyarrow` (v11.0.0) was included because `mlflow` (v2.2.2) depends
+        on `pyarrow`
+### RESULT: pip install -r requirements.txt -> exit=1 (4s) FAIL
+
+### STEP: pip freeze (resolved versions)
+$ uv pip freeze --python $SCRATCH/py312/bin/python
+Using Python 3.12.3 environment at: $SCRATCH/py312
+### RESULT: pip freeze (resolved versions) -> exit=0 (0s) PASS
+
+### SKIPPED: main.py and app.py (install failed)
+
+### working-tree check of the audited repo (must be unchanged by this script)
+no tracked changes outside pre-existing mlruns deletions

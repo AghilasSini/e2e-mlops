@@ -1,0 +1,29 @@
+# Data-validation bug reproduction (task 5.1) — 2026-11-09, Python 3.8 env, scratch clone of the audited commit
+$ python valbug.py
+CSV columns missing from schema.yaml: ['chlorides']
+schema.yaml columns missing from CSV: ['clorides']
+Real dataset            -> (True, 'Validation status : True')
+Same data, 'chlorides' last -> (False, 'Validation status : False')
+Extra junk column first -> (True, 'Validation status : True')
+
+## Script
+# Reproduction of the data-validation bug (audit task 5.1). Run from a scratch clone.
+import pandas as pd, yaml, tempfile, os
+from mlProject.components.data_validation import DataValidation
+from mlProject.entity.config_entity import DataValidationConfig
+schema = yaml.safe_load(open("schema.yaml"))["COLUMNS"]
+cols = list(pd.read_csv("artifacts/data_ingestion/winequality-red.csv", nrows=0).columns)
+print("CSV columns missing from schema.yaml:", [c for c in cols if c not in schema])
+print("schema.yaml columns missing from CSV:", [c for c in schema if c not in cols])
+def run(csv_path):
+    st = tempfile.mktemp()
+    v = DataValidation(DataValidationConfig(root_dir=".", STATUS_FILE=st, unzip_data_dir=csv_path, all_schema=schema))
+    return v.validation_all_columns(), open(st).read()
+print("Real dataset            ->", run("artifacts/data_ingestion/winequality-red.csv"))
+# Column order matters: move the unknown column to the end and the result flips.
+df = pd.read_csv("artifacts/data_ingestion/winequality-red.csv")
+p = tempfile.mktemp(suffix=".csv"); df[[c for c in cols if c != "chlorides"] + ["chlorides"]].to_csv(p, index=False)
+print("Same data, 'chlorides' last ->", run(p))
+# A totally foreign column early in the file is also accepted.
+p2 = tempfile.mktemp(suffix=".csv"); df.assign(**{"not_a_wine_feature": 1})[["not_a_wine_feature"] + cols].to_csv(p2, index=False)
+print("Extra junk column first ->", run(p2))

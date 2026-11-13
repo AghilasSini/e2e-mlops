@@ -1,0 +1,14 @@
+# actionlint v1.7.1 .github/workflows/main.yaml (task 6.2)
+.github/workflows/main.yaml:41:15: the runner of "aws-actions/configure-aws-credentials@v1" action is too old to run on GitHub Actions. update the action's version to fix this issue [action]
+   |
+41 |         uses: aws-actions/configure-aws-credentials@v1
+   |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.github/workflows/main.yaml:57:14: workflow command "set-output" was deprecated. use `echo "{name}={value}" >> $GITHUB_OUTPUT` instead: https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions [deprecated-commands]
+   |
+57 |         run: |
+   |              ^
+.github/workflows/main.yaml:74:15: the runner of "aws-actions/configure-aws-credentials@v1" action is too old to run on GitHub Actions. update the action's version to fix this issue [action]
+   |
+74 |         uses: aws-actions/configure-aws-credentials@v1
+   |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+exit=1
